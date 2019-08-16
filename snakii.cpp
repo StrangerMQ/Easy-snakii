@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <graphics.h>
 using namespace std;
-
+HWND hwnd = NULL;
 struct set
 {
 	int x;
@@ -14,7 +14,7 @@ struct set
 class snake1
 {public:
 	int length;
-	set set[100];
+	set set[200];
 	char dire;
 }snake;
 //食物类
@@ -23,7 +23,7 @@ class food1
 	set set;
 	int score=0;
 }food;
-enum{u,d,l,r};
+enum { u, d, l, r, n };
 //初始化蛇
 void makesnake()
 {
@@ -41,8 +41,8 @@ void drawsnake()
 {
 	for (int i = 0; i < snake.length; i++)
 	{
-		setlinecolor(BLACK);
-		setfillcolor(GREEN);
+		setlinecolor(WHITE);
+		setfillcolor(WHITE);
 		fillrectangle(snake.set[i].x, snake.set[i].y, snake.set[i].x + 10, snake.set[i].y + 10);
 	}
 }
@@ -54,9 +54,6 @@ void gosnake()
 		snake.set[i].x = snake.set[i - 1].x;
 		snake.set[i].y = snake.set[i - 1].y;
 	}
-
-
-
 	switch (snake.dire)
 	{
 	case u:
@@ -159,7 +156,6 @@ void makefood()
 	{
 		while (snake.set[i].x == food.set.x&&snake.set[i].y == food.set.y)
 		{
-			
 			food.set.x = rand() % 63 * 10;
 		    food.set.y = rand() % 39 * 10;
 		}
@@ -169,8 +165,8 @@ void makefood()
 //画出食物
 void drawfood()
 {
-	setlinecolor(RED);
-	setfillcolor(RED);
+	setlinecolor(WHITE);
+	setfillcolor(WHITE);
 	fillrectangle(food.set.x, food.set.y, food.set.x + 10, food.set.y + 10);
 }
 //判断吃食物
@@ -194,45 +190,234 @@ void over()
 	outtextxy(265, 180, "YOUR SCORE:");
 	outtextxy(305, 200, grade);
 }
-//自动恰食
-void automod()
+//反snake.dire
+int antisnake()
 {
+	char a;
+	if (snake.dire == u)
+		a = d;
+	else if (snake.dire == d)
+		a = u;
+	else if (snake.dire == r)
+		a = l;
+	else if (snake.dire == l)
+		a = r;
+	return a;
+}
+//自动恰食
+int getauto()
+{
+	int x,y;
+	char d1,d2;
+	if (snake.set[0].x < food.set.x)
+	{
+		x = (food.set.x - snake.set[0].x) / 10;
+		d1 = r;
+	}
+	else if (snake.set[0].x > food.set.x)
+	{
+		x = (snake.set[0].x - food.set.x) / 10;
+		d1 = l;
+	}
+	else x = 0;
+	if (snake.set[0].y < food.set.y)
+	{
+		y = (food.set.y - snake.set[0].y) / 10;
+		d2 = d;
+	}
+	else if (snake.set[0].y > food.set.y)
+	{
+		y = (snake.set[0].y - food.set.y) / 10;
+		d2 = u;
+	}
+	else y = 0;
+	if (x != 0 && y != 0)
+	{
+		if (antisnake() == d1)
+			return d2;
+		else return d1;
+	}
+	if (x == 0 && y != 0)
+	{
+		if (antisnake() == d2)
+			return r;
+		else return d2;
+	}
+	if (y == 0 && x != 0)
+	{
+		if (antisnake() == d1)
+			return u;
+		else return d1;
+	}
+}
+//避免撞到自己
+int destory(int i)
+{
+	set a[200];
+	char d1;
+	for (int j = snake.length +3; j > 0; j--)
+	{
+		a[j].x = snake.set[j - 1].x;
+	    a[j].y = snake.set[j - 1].y;
+	}
+	a[0].x = snake.set[0].x;
+	a[0].y = snake.set[0].y;
+	switch (i)
+	{
+	case u:
+	{
+		a[0].y -= 10;
+		break;
+	}
+	case d:
+	{
+		a[0].y += 10;
+		break;
+	}
+	case r:
+	{
+		a[0].x += 10;
+		break;
+	}
+	case l:
+	{
+		a[0].x -= 10;
+		break;
+	}
+	}
+	for (int e = snake.length - 1; e > 3; e--)
+	{
+		if (a[0].x == a[e].x&&a[0].y == a[e].y)
+		{
+			//左下，向上
+			if (a[e].y < a[e - 1].y&&a[e + 2].x < a[e + 1].x) i = l;
+			//左下，向右
+			else if (a[e].x > a[e - 1].x&&a[e + 2].y > a[e + 1].y) i = d;
+			//左上，向右
+			else if (a[e].x > a[e - 1].x&&a[e + 2].y < a[e + 1].y) i = u;
+			//左上，向下
+			else if (a[e].y > a[e - 1].y&&a[e + 2].x > a[e + 1].x) i = l;
+			//右上，向左
+			else if (a[e].x < a[e - 1].x&&a[e + 2].y < a[e + 1].y) i = u;
+			//右下，向左
+			else if (a[e].x < a[e - 1].x&&a[e + 2].y > a[e + 1].y) i = d;
+			//右上，向下
+			else if (a[e].y > a[e - 1].y&&a[e + 2].x < a[e + 1].x) i = r;
+			//右下，向上
+			else if (a[e].y < a[e - 1].y&&a[e + 2].x > a[e + 1].x) i = r;
+			else if (a[e].x < a[e-1].x)
+			{
+				i = l; 
+			}
+			else if (a[e].x > a[e - 1].x)
+			{
+				i = r; 
+			}
+			else if (a[e].y < a[e - 1].y)
+			{
+				i = u; 
+			}
+			else if (a[e].y > a[e - 1].y)
+			{
+				i = d; 
+			}
+		}
+	}
+	return i;
+}
+//自动控制
+void control1(int i)
+{
+	switch (i)
+	{
+	case u:
+		if (snake.dire != d)
+			snake.dire = u;
+		break;
+	case d:
+		if (snake.dire != u)
+			snake.dire = d;
+		break;
+	case l:
+		if (snake.dire != r)
+			snake.dire = l; 
 
+		break;
+	case r:
+		if (snake.dire != l)
+			snake.dire = r;
+		break;
+	}
+}
+//选择模式
+int choose()
+{
+	return MessageBox(hwnd, "是否开启自动模式", "选择模式", MB_YESNO);
 }
 //主函数
 int main()
 {
 	srand((int)time(NULL));
-	initgraph(640, 400);
-	setbkcolor(WHITE);
+	hwnd=initgraph(640, 400);
+	setbkcolor(BLACK);
 	cleardevice();
-	makesnake();
-	makefood();
-	while (1)
+	if (choose() == 6)
 	{
-		cleardevice();
-		checkfood();
-		drawfood();
-		if (hurt())
+		makesnake();
+		makefood();
+		while (1)
 		{
-			over();
-			break;
+			cleardevice();
+			checkfood();
+			drawfood();
+			if (hurt())
+			{
+				over();
+				break;
+			}
+			control1(destory(getauto()));
+			gosnake();
+			drawsnake();
+			if (border())
+			{
+				over();
+				break;
+			}
+			score(); 
+			Sleep(1);
 		}
 		drawsnake();
-		if (border())
-		{
-			over();
-			break;
-		}
-		score();
-		gosnake();
-		Sleep(100);
-		while (_kbhit())
-		{
-			control();
-		}
 	}
-	drawsnake();
+	else 
+	{
+		makesnake();
+		makefood();
+		while (1)
+		{
+			cleardevice();
+			checkfood();
+			drawfood();
+			if (hurt())
+			{
+				over();
+				break;
+			}
+			drawsnake();
+			if (border())
+			{
+				over();
+				break;
+			}
+			score();
+			gosnake();
+			Sleep(100);
+			while (_kbhit())
+			{
+				control();
+			}
+		}
+		drawsnake();
+	}
 	
 	while(_getch())
 		continue;
